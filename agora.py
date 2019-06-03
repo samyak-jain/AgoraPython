@@ -1,4 +1,5 @@
 import asyncio
+from pathlib import Path
 from typing import List
 
 from pyppeteer import launch
@@ -41,15 +42,16 @@ class AgoraRTC:
 
     async def get_users_list(self, app_id: str, channel_name: str) -> List[ElementHandle]:
         page: Page = await self.browser.newPage()
-        await page.goto("localhost:3097")
+        frontend_html: Path = Path("./frontend/index.html").absolute()
+        await page.goto(f"file://{str(frontend_html)}")
         await page.waitForFunction("bootstrap", None, app_id, channel_name)
         await page.waitForSelector("video")
         users: List[ElementHandle] = await page.JJ("video")
 
         return users
 
-    def get_users(self):
+    def get_users(self) -> List[User]:
         assert self.browser is not None
 
-        results: List[ElementHandle] = asyncio.run(get_users_list(self.app_id, self.channel_name))
+        results: List[ElementHandle] = asyncio.run(self.get_users_list(self.app_id, self.channel_name))
         return [User(result) for result in results]
