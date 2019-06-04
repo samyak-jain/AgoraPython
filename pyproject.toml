@@ -9,6 +9,7 @@ python = "^3.7"
 pyppeteer = "^0.0.25"
 
 [tool.poetry.dev-dependencies]
+pysnooper = "^0.1.0"
 
 [build-system]
 requires = ["poetry>=0.12"]
