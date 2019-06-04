@@ -13,27 +13,19 @@
         </style>
     </head>
     <body>
-        
         <div id="remote"></div>
-
-        
         <script src="./AgoraRTCSDK-2.6.1.js"></script>
         <script>
-            
             let handleFail = function(err){
                 console.log("Error : ", err);
             };
-
-            
             let remoteContainer= document.getElementById("remote");
-
             function addVideoStream(streamId){
                 let streamDiv=document.createElement("div"); 
                 streamDiv.id=streamId;                       
                 streamDiv.style.transform="rotateY(180deg)"; 
                 remoteContainer.appendChild(streamDiv);      
             }
-            
             function removeVideoStream (evt) {
                 let stream = evt.stream;
                 stream.stop();
@@ -41,33 +33,23 @@
                 remDiv.parentNode.removeChild(remDiv);
                 console.log("Remote stream is removed " + stream.getId());
             }
-
             function bootstrap(appId,channelId){
                 let client = AgoraRTC.createClient({
                     mode: 'live',
                     codec: "vp8"
                 });
-
-                // Client Setup
-                // Defines a client for Real Time Communication
                 client.init(appId,() => console.log("AgoraRTC client initialized") ,handleFail);
-
-                // The client joins the channel
                 client.join(null,channelId,null, (uid)=>{},handleFail);
-
-                //When a stream is added to a channel
                 client.on('stream-added', function (evt) {
                     client.subscribe(evt.stream, handleFail);
                 });
-                //When you subscribe to a stream
                 client.on('stream-subscribed',function(evt){
                     let stream = evt.stream;
                     addVideoStream(stream.getId());
                     stream.play(String(stream.getId()));
                 });
-                //When a person is removed from the stream
                 client.on('stream-removed',removeVideoStream);
-
+                client.on('peer-leave',removeVideoStream);
                 return true;
             }
         </script>
