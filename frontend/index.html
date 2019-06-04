@@ -47,7 +47,11 @@
                     let stream = evt.stream;
                     addVideoStream(stream.getId());
                     stream.play(String(stream.getId()));
-                    document.getElementById('video'+String(stream.getId())).className='playing';
+                    let vid = document.getElementById('video'+String(stream.getId()))
+
+                    vid.addEventListener('playing',function(){
+                        vid.className='playing';
+                    });
                 });
                 client.on('stream-removed',removeVideoStream);
                 client.on('peer-leave',removeVideoStream);
