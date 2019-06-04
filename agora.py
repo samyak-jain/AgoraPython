@@ -1,19 +1,25 @@
 import asyncio
+from asyncio.events import AbstractEventLoop
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from pyppeteer import launch
+from pyppeteer.browser import Browser
 from pyppeteer.element_handle import ElementHandle
 from pyppeteer.page import Page
 
 
 class User:
-    def __init__(self, element: ElementHandle):
+    loop: AbstractEventLoop
+    element: ElementHandle
+
+    def __init__(self, element: ElementHandle, loop: AbstractEventLoop):
         self.element = element
+        self.loop = loop
 
     async def get_id(self) -> str:
         prop: ElementHandle = await self.element.getProperty("id")
-        uid: str = prop.toString()[5:]
+        uid: str = prop.toString()[14:]
         return uid
 
     async def get_frame(self) -> bytes:
@@ -22,65 +28,68 @@ class User:
 
     @property
     def id(self):
-        return asyncio.run(self.get_id())
+        return self.loop.run_until_complete(self.get_id())
 
     @property
     def frame(self):
-        return asyncio.run(self.get_frame())
+        return self.loop.run_until_complete(self.get_frame())
 
 
 class AgoraRTC:
-    def __init__(self, app_id: str, channel_name: str):
+    page: Optional[Page]
+    loop: AbstractEventLoop
+    channel_name: str
+    app_id: str
+    browser: Optional[Browser]
+
+    @classmethod
+    async def creator(cls, app_id: str, channel_name: str, loop: AbstractEventLoop):
+        agora = AgoraRTC(app_id, channel_name, loop)
+        agora.browser = await launch(args=['--no-sandbox', '--disable-setuid-sandbox'], headless=False)
+        agora.page: Page = await agora.browser.newPage()
+        frontend_html: Path = Path("./frontend/index.html").absolute()
+        await agora.page.goto(f"file://{str(frontend_html)}")
+        await agora.page.waitForFunction("bootstrap", None, agora.app_id, agora.channel_name)
+        await agora.page.waitForSelector("video.playing")
+
+        return agora
+
+    @classmethod
+    def create_watcher(cls, app_id: str, channel_name: str):
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(cls.creator(app_id, channel_name, loop))
+
+    def __init__(self, app_id: str, channel_name: str, loop):
         self.app_id = app_id
         self.channel_name = channel_name
-        self.browser = None
+        self.loop = loop
 
-    async def __aenter__(self):
-        self.browser = await launch(args=['--no-sandbox', '--disable-setuid-sandbox'], headless=False)
+    async def async_close(self):
+        assert self.browser is not None
+        await self.browser.close()
+
+    def unwatch(self):
+        self.loop.run_until_complete(self.async_close())
+
+    def __enter__(self):
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        assert self.browser is not None
-        await self.browser.close()
-
-    async def open(self):
-        self.browser = await launch(args=['--no-sandbox', '--disable-setuid-sandbox'], headless=False)
-
-    async def close(self):
-        assert self.browser is not None
-        await self.browser.close()
-
-    # def open(self):
-    #     asyncio.run(self.async_open())
-    #
-    # def close(self):
-    #     asyncio.run(self.async_close())
-    #
-    # def __enter__(self):
-    #     self.open()
-    #
-    # def __exit__(self, exc_type, exc_val, exc_tb):
-    #     self.close()
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.unwatch()
 
     async def get_users_list(self) -> List[ElementHandle]:
         assert self.browser is not None
+        assert self.page is not None
 
-        page: Page = await self.browser.newPage()
-        frontend_html: Path = Path("./frontend/index.html").absolute()
-        await page.goto(f"file://{str(frontend_html)}")
-        await page.waitForFunction("bootstrap", None, self.app_id, self.channel_name)
-        await page.waitForSelector("video")
-        users: List[ElementHandle] = await page.JJ("video")
+        users: List[ElementHandle] = await self.page.JJ("video.playing")
 
         return users
 
-    async def get_users(self) -> List[User]:
+    async def async_get_users(self) -> List[User]:
         assert self.browser is not None
 
-        # print("test1")
-        # self.loop = asyncio.get_running_loop()
-        # asyncio.set_event_loop(loop)
-        # print("test2")
-        # print(asyncio.get_running_loop())
         results: List[ElementHandle] = await self.get_users_list()
-        return [User(result) for result in results]
+        return [User(result, self.loop) for result in results]
+
+    def get_users(self) -> List[User]:
+        return self.loop.run_until_complete(self.async_get_users())
