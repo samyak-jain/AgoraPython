@@ -1,12 +1,13 @@
 import asyncio
 from asyncio.events import AbstractEventLoop
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from pyppeteer import launch
 from pyppeteer.browser import Browser
 from pyppeteer.element_handle import ElementHandle
 from pyppeteer.page import Page
+import os
 
 
 class User:
@@ -45,9 +46,15 @@ class AgoraRTC:
     @classmethod
     async def creator(cls, app_id: str, channel_name: str, loop: AbstractEventLoop):
         agora = AgoraRTC(app_id, channel_name, loop)
-        agora.browser = await launch(args=['--no-sandbox', '--disable-setuid-sandbox'], headless=False)
-        agora.page: Page = await agora.browser.newPage()
-        frontend_html: Path = Path("./frontend/index.html").absolute()
+        agora.browser = await launch(args=['--no-sandbox', '--disable-setuid-sandbox'])
+        agora.page = await agora.browser.newPage()
+        current_os_path: Union[bytes, str] = os.path.realpath(__file__)
+        if isinstance(current_os_path, bytes):
+            current_path: str = current_os_path.decode("utf-8")
+        else:
+            current_path = current_os_path
+
+        frontend_html: Path = Path(current_path) / Path("frontend/index.html")
         await agora.page.goto(f"file://{str(frontend_html)}")
         await agora.page.waitForFunction("bootstrap", None, agora.app_id, agora.channel_name)
         await agora.page.waitForSelector("video.playing")
