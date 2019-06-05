@@ -48,7 +48,7 @@ class AgoraRTC:
         agora = AgoraRTC(app_id, channel_name, loop)
         agora.browser = await launch(args=['--no-sandbox', '--disable-setuid-sandbox'])
         agora.page = await agora.browser.newPage()
-        current_os_path: Union[bytes, str] = os.path.realpath(__file__)
+        current_os_path: Union[bytes, str] = os.path.dirname(os.path.realpath(__file__))
         if isinstance(current_os_path, bytes):
             current_path: str = current_os_path.decode("utf-8")
         else:
