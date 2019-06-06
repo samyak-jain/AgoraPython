@@ -1,8 +1,11 @@
 import asyncio
 import os
+import time
 from asyncio.events import AbstractEventLoop
+from concurrent.futures.thread import ThreadPoolExecutor
 from pathlib import Path
-from typing import List, Optional, Union
+from threading import Lock
+from typing import List, Optional, Union, Callable, Any, Tuple, Dict
 
 from pyppeteer import launch
 from pyppeteer.browser import Browser
@@ -37,23 +40,52 @@ class User:
         return self.loop.run_until_complete(self.get_frame())
 
 
+class Locker:
+    value: Any
+    lock: Lock
+
+    def __init__(self, value: Any):
+        self.lock = threading.Lock()
+        self.value = value
+
+
+class FrameThread(threading.Thread):
+    delay: float
+    proc: Callable[..., Any]
+    index: int
+
+    def __init__(self, index: int, process: Callable[..., Any], delay: float):
+        super().__init__()
+        self.index = index
+        self.proc = process # type: ignore
+        self.delay = delay
+
+    def run(self) -> None:
+        time.sleep(self.index * self.delay)
+        self.proc()
+
+
 class AgoraRTC:
+    locked_variables: Dict[str, Locker]
+    fps: Optional[int]
     page: Optional[Page]
+    browser: Optional[Browser]
     loop: AbstractEventLoop
     channel_name: Optional[str]
     app_id: str
-    browser: Optional[Browser]
 
-    def __init__(self, app_id: str, loop):
+    def __init__(self, app_id: str, loop: AbstractEventLoop):
         self.app_id = app_id
         self.channel_name = None
         self.loop = loop
-        self.browser: Optional[Browser] = None
-        self.page: Optional[Page] = None
+        self.browser = None
+        self.page = None
+        self.fps = None
+        self.locked_variables = dict()
 
     @classmethod
     def create_watcher(cls, app_id: str):
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return AgoraRTC(app_id, loop)
 
     async def creator(self):
@@ -103,3 +135,23 @@ class AgoraRTC:
 
     def get_users(self) -> List[User]:
         return self.loop.run_until_complete(self.async_get_users())
+
+    def set_fps(self, fps: int = 30):
+        if fps <= 0:
+            raise ValueError("FPS value should be more than 0")
+
+        self.fps = fps
+
+    def get_frames(self, proc: Callable[..., Any], locker: Tuple[Any, ...] = ()):
+        if self.fps is None:
+            raise RuntimeError("FPS not set by the user. Use set_fps() method")
+
+        self.locked_variables = {variable: Locker(value) for variable, value in locals().items() if value in locker}
+        milliseconds_to_wait: float = 100 / self.fps
+
+        print(self.fps)
+        print(milliseconds_to_wait)
+
+        threads = [FrameThread(index, proc, milliseconds_to_wait) for index in range(self.fps)]
+        for thread in threads:
+            thread.start()
