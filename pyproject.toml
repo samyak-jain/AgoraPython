@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "agora-community-sdk"
-version = "0.1.3"
+version = "0.1.4"
 description = "An SDK allowing the use of Agora SDK in python"
 authors = ["samyak-jain <samtan106@gmail.com>"]
 repository = "https://github.com/samyak-jain/AgoraPython"
