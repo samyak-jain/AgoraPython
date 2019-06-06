@@ -1,17 +1,32 @@
 import asyncio
 import os
+import threading
 import time
 from asyncio.events import AbstractEventLoop
-from concurrent.futures.thread import ThreadPoolExecutor
 from pathlib import Path
 from threading import Lock
 from typing import List, Optional, Union, Callable, Any, Tuple, Dict
 
+import nest_asyncio
 from pyppeteer import launch
 from pyppeteer.browser import Browser
 from pyppeteer.element_handle import ElementHandle
 from pyppeteer.page import Page
-import threading
+
+
+def run_async_code(function: Callable[..., Any], loop: AbstractEventLoop) -> Any:
+    # task = loop.create_task(function())
+
+    # future = asyncio.run_coroutine_threadsafe(function(), loop)
+    # # return future.done()
+    # try:
+    #     result = future.result()
+    # except asyncio.TimeoutError:
+    #     print("Coroutine took long. Cancelling...")
+    #     future.cancel()
+    # else:
+    #     return result
+    return loop.run_until_complete(function())
 
 
 class User:
@@ -28,16 +43,17 @@ class User:
         return uid
 
     async def get_frame(self) -> bytes:
+        print(self.element)
         frame: bytes = await self.element.screenshot()
         return frame
 
     @property
     def id(self):
-        return self.loop.run_until_complete(self.get_id())
+        return run_async_code(self.get_id, self.loop)
 
     @property
     def frame(self):
-        return self.loop.run_until_complete(self.get_frame())
+        return run_async_code(self.get_frame, self.loop)
 
 
 class Locker:
@@ -57,7 +73,7 @@ class FrameThread(threading.Thread):
     def __init__(self, index: int, process: Callable[..., Any], delay: float):
         super().__init__()
         self.index = index
-        self.proc = process # type: ignore
+        self.proc = process  # type: ignore
         self.delay = delay
 
     def run(self) -> None:
@@ -85,7 +101,8 @@ class AgoraRTC:
 
     @classmethod
     def create_watcher(cls, app_id: str):
-        loop = asyncio.get_running_loop()
+        loop = asyncio.get_event_loop()
+        nest_asyncio.apply(loop)
         return AgoraRTC(app_id, loop)
 
     async def creator(self):
@@ -104,14 +121,15 @@ class AgoraRTC:
 
     def join_channel(self, channel_name: str):
         self.channel_name = channel_name
-        self.loop.run_until_complete(self.creator())
+        # self.loop.run_until_complete(self.creator())
+        run_async_code(self.creator, self.loop)
 
     async def async_close(self):
         assert self.browser is not None
         await self.browser.close()
 
     def unwatch(self):
-        self.loop.run_until_complete(self.async_close())
+        run_async_code(self.async_close, self.loop)
 
     def __enter__(self):
         return self
@@ -134,7 +152,7 @@ class AgoraRTC:
         return [User(result, self.loop) for result in results]
 
     def get_users(self) -> List[User]:
-        return self.loop.run_until_complete(self.async_get_users())
+        return run_async_code(self.async_get_users, self.loop)
 
     def set_fps(self, fps: int = 30):
         if fps <= 0:
