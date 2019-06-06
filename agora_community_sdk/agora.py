@@ -1,4 +1,5 @@
 import asyncio
+import os
 from asyncio.events import AbstractEventLoop
 from pathlib import Path
 from typing import List, Optional, Union
@@ -7,7 +8,7 @@ from pyppeteer import launch
 from pyppeteer.browser import Browser
 from pyppeteer.element_handle import ElementHandle
 from pyppeteer.page import Page
-import os
+import threading
 
 
 class User:
@@ -39,15 +40,25 @@ class User:
 class AgoraRTC:
     page: Optional[Page]
     loop: AbstractEventLoop
-    channel_name: str
+    channel_name: Optional[str]
     app_id: str
     browser: Optional[Browser]
 
+    def __init__(self, app_id: str, loop):
+        self.app_id = app_id
+        self.channel_name = None
+        self.loop = loop
+        self.browser: Optional[Browser] = None
+        self.page: Optional[Page] = None
+
     @classmethod
-    async def creator(cls, app_id: str, channel_name: str, loop: AbstractEventLoop):
-        agora = AgoraRTC(app_id, channel_name, loop)
-        agora.browser = await launch(args=['--no-sandbox', '--disable-setuid-sandbox'])
-        agora.page = await agora.browser.newPage()
+    def create_watcher(cls, app_id: str):
+        loop = asyncio.get_event_loop()
+        return AgoraRTC(app_id, loop)
+
+    async def creator(self):
+        self.browser = await launch(args=['--no-sandbox', '--disable-setuid-sandbox'])
+        self.page = await self.browser.newPage()
         current_os_path: Union[bytes, str] = os.path.dirname(os.path.realpath(__file__))
         if isinstance(current_os_path, bytes):
             current_path: str = current_os_path.decode("utf-8")
@@ -55,21 +66,13 @@ class AgoraRTC:
             current_path = current_os_path
 
         frontend_html: Path = Path(current_path) / Path("frontend/index.html")
-        await agora.page.goto(f"file://{str(frontend_html)}")
-        await agora.page.waitForFunction("bootstrap", None, agora.app_id, agora.channel_name)
-        await agora.page.waitForSelector("video.playing")
+        await self.page.goto(f"file://{str(frontend_html)}")
+        await self.page.waitForFunction("bootstrap", None, self.app_id, self.channel_name)
+        await self.page.waitForSelector("video.playing")
 
-        return agora
-
-    @classmethod
-    def create_watcher(cls, app_id: str, channel_name: str):
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(cls.creator(app_id, channel_name, loop))
-
-    def __init__(self, app_id: str, channel_name: str, loop):
-        self.app_id = app_id
+    def join_channel(self, channel_name: str):
         self.channel_name = channel_name
-        self.loop = loop
+        self.loop.run_until_complete(self.creator())
 
     async def async_close(self):
         assert self.browser is not None
