@@ -15,17 +15,6 @@ from pyppeteer.page import Page
 
 
 def run_async_code(function: Callable[..., Any], loop: AbstractEventLoop) -> Any:
-    # task = loop.create_task(function())
-
-    # future = asyncio.run_coroutine_threadsafe(function(), loop)
-    # # return future.done()
-    # try:
-    #     result = future.result()
-    # except asyncio.TimeoutError:
-    #     print("Coroutine took long. Cancelling...")
-    #     future.cancel()
-    # else:
-    #     return result
     return loop.run_until_complete(function())
 
 
@@ -121,7 +110,6 @@ class AgoraRTC:
 
     def join_channel(self, channel_name: str):
         self.channel_name = channel_name
-        # self.loop.run_until_complete(self.creator())
         run_async_code(self.creator, self.loop)
 
     async def async_close(self):
