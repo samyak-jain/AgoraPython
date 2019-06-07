@@ -119,6 +119,7 @@ class FrameThread(threading.Thread):
 
 
 class AgoraRTC:
+    watching: bool
     locked_variables: Dict[str, Locker]
     fps: Optional[int]
     page: Optional[Page]
@@ -135,6 +136,7 @@ class AgoraRTC:
         self.page = None
         self.fps = None
         self.locked_variables = dict()
+        self.watching = False
 
     @classmethod
     def create_watcher(cls, app_id: str):
@@ -157,15 +159,23 @@ class AgoraRTC:
         await self.page.waitForSelector("video.playing")
 
     def join_channel(self, channel_name: str):
+        if self.watching:
+            raise RuntimeError("Already Watching")
+
         self.channel_name = channel_name
         run_async_code(self.creator, self.loop)
+        self.watching = True
 
     async def async_close(self):
         assert self.browser is not None
         await self.browser.close()
 
     def unwatch(self):
+        if not self.watching:
+            raise RuntimeError("Nothing to close")
+
         run_async_code(self.async_close, self.loop)
+        self.watching = False
 
     def __enter__(self):
         return self
@@ -188,6 +198,9 @@ class AgoraRTC:
         return [User(result, self.loop) for result in results]
 
     def get_users(self) -> List[User]:
+        if not self.watching:
+            raise RuntimeError("No channel has been joined yet")
+
         reloaded: bool = False
         users: List[User] = run_async_code(self.async_get_users, self.loop)
         for user in users:
