@@ -8,7 +8,7 @@ To install -
 
 ```python
 from agora_community_sdk import AgoraRTC
-client = AgoraRTC("app-id")
+client = AgoraRTC.create_watcher("app-id")
 client.join_channel("channel-name")
 
 users = client.get_users() # Gets references to everyone participating in the call
@@ -30,7 +30,7 @@ Can also use with statement -
 ```python
 from agora_community_sdk import AgoraRTC
 
-with AgoraRTC("app-id") as client:
+with AgoraRTC.create_watcher("app-id") as client:
     client.join_channel("channel-name")
     
     users = client.get_users()
