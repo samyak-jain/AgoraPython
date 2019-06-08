@@ -128,7 +128,7 @@ class AgoraRTC:
     channel_name: Optional[str]
     app_id: str
 
-    def __init__(self, app_id: str, loop: AbstractEventLoop, executable: str):
+    def __init__(self, app_id: str, loop: AbstractEventLoop, executable: Optional[str] = None, debug: bool = False):
         self.app_id = app_id
         self.channel_name = None
         self.loop = loop
@@ -138,15 +138,21 @@ class AgoraRTC:
         self.locked_variables = dict()
         self.watching = False
         self.executable = executable
+        self.debug = debug
 
     @classmethod
-    def create_watcher(cls, app_id: str, executable: str):
+    def create_watcher(cls, app_id: str, executable: Optional[str], debug: bool = False):
         loop = asyncio.get_event_loop()
         nest_asyncio.apply(loop)
-        return AgoraRTC(app_id, loop, executable)
+        return AgoraRTC(app_id, loop, executable, debug)
 
     async def creator(self):
-        self.browser = await launch(args=['--no-sandbox', '--disable-setuid-sandbox'], executablePath=self.executable)
+
+        if self.executable is not None:
+            self.browser = await launch(args=['--no-sandbox', '--disable-setuid-sandbox'], executablePath=self.executable, headless=(not self.debug))
+        else:
+            self.browser = await launch(args=['--no-sandbox', '--disable-setuid-sandbox'], headless=(not self.debug))
+
         self.page = await self.browser.newPage()
         current_os_path: Union[bytes, str] = os.path.dirname(os.path.realpath(__file__))
         if isinstance(current_os_path, bytes):
