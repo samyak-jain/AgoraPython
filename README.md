@@ -46,3 +46,10 @@ with AgoraRTC.create_watcher("app-id") as client:
 
 If any timeout errors are faced, then change the arguments passed to create\_watcher:  
 ```client = AgoraRTC.create_watcher("app-id", "path-to-chrome", True)```
+
+
+## AI Example
+
+A working application can be cloned from https://github.com/samyak-jain/ssd.pytorch  
+Download the weights from the readme   
+Run demo/demo.ipynb
