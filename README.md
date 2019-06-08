@@ -4,6 +4,9 @@ A python library to stream video from agora servers.
 To install -   
 ```pip install agora-community-sdk```
 
+Run the following commmand to install a chromium executable -  
+```pyppeteer-install```
+
 ## Code Example:
 
 ```python
