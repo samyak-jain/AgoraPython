@@ -40,3 +40,6 @@ with AgoraRTC.create_watcher("app-id") as client:
     b64_frame = user1.frame
 
 ```
+
+If any timeout errors are faced, then change the arguments passed to create\_watcher:  
+```client = AgoraRTC.create_watcher("app-id", "path-to-chrome", True)```
