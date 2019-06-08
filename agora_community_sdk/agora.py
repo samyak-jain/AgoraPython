@@ -141,7 +141,7 @@ class AgoraRTC:
         self.debug = debug
 
     @classmethod
-    def create_watcher(cls, app_id: str, executable: Optional[str], debug: bool = False):
+    def create_watcher(cls, app_id: str, executable: Optional[str] = None, debug: bool = False):
         loop = asyncio.get_event_loop()
         nest_asyncio.apply(loop)
         return AgoraRTC(app_id, loop, executable, debug)
