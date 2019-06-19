@@ -148,7 +148,10 @@ class AgoraRTC:
         # options.add_argument("--start-maximized")
         options.add_argument("--use-fake-ui-for-media-stream")
         options.add_argument("--autoplay-policy=no-user-gesture-required")
-        wd = webdriver.Chrome("/home/samyak/Applications/chromedriver", options=options)
+        if self.executable is None:
+            wd = webdriver.Chrome("chromedriver", options=options)
+        else:
+            wd = webdriver.Chrome(self.executable, options=options)
         # wd.set_window_size(1920, 1080)
         wd.get(f'file://{str(Path(os.path.dirname(os.path.realpath(__file__))) / "frontend/index.html")}')
         # wd.find_element_by_tag_name("html").click()
