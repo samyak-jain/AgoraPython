@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "agora-community-sdk"
-version = "0.1.6"
+version = "0.1.7"
 description = "An SDK allowing the use of Agora SDK in python"
 authors = ["samyak-jain <samtan106@gmail.com>"]
 repository = "https://github.com/samyak-jain/AgoraPython"
@@ -11,6 +11,8 @@ python = "^3.6"
 pyppeteer = "^0.0.25"
 nest_asyncio = "^1.0"
 websockets = "=6.0"
+selenium = "^3.141"
+pillow = "^6.0"
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.701.0"

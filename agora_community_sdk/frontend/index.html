@@ -46,8 +46,10 @@
                 client.on('stream-subscribed',function(evt){
                     let stream = evt.stream;
                     addVideoStream(stream.getId());
+                    console.log(String(stream.getId()));
                     stream.play(String(stream.getId()));
-                    let vid = document.getElementById('video'+String(stream.getId()))
+                    let vid = document.getElementById('video'+String(stream.getId()));
+                    console.log(vid);
 
                     vid.addEventListener('playing',function(){
                         vid.className='playing';

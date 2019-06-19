@@ -1,0 +1,11 @@
+Metadata-Version: 1.2
+Name: agora-community-sdk
+Version: 0.1.6
+Summary: An SDK allowing the use of Agora SDK in python
+Home-page: https://github.com/samyak-jain/AgoraPython
+Author: samyak-jain
+Author-email: samtan106@gmail.com
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Requires-Python: >=3.6,<4.0
