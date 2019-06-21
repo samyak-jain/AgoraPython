@@ -4,49 +4,26 @@ A python library to stream video from agora servers.
 To install -   
 ```pip install agora-community-sdk```
 
-Run the following commmand to install a chromium executable -  
-```pyppeteer-install```
+You will also need to download the chromium driver from http://chromedriver.chromium.org
 
 ## Code Example:
 
 ```python
 from agora_community_sdk import AgoraRTC
-client = AgoraRTC.create_watcher("app-id")
+client = AgoraRTC.create_watcher("app-id", "path to chromium driver")
 client.join_channel("channel-name")
 
 users = client.get_users() # Gets references to everyone participating in the call
 
 user1 = users[0] # Can reference users in a list
-print(user1.id) # Can also access users based on uid
 
-binary_image = user1.frame # Gets the latest frame from the stream as a blob
-b64_image = user1.b64_frame # Get latest frame in base64 encoded format
+binary_image = user1.frame # Gets the latest frame from the stream as a PIL image
 
 with open("test.jpg") as f:
     f.write(binary_image) # Can write to file
 
 client.unwatch() # Stop listening to the channel. Not calling this can cause memory leaks
 ```
-
-Can also use with statement - 
-
-```python
-from agora_community_sdk import AgoraRTC
-
-with AgoraRTC.create_watcher("app-id") as client:
-    client.join_channel("channel-name")
-    
-    users = client.get_users()
-    user1 = users[0]
-    
-    frame = user1.frame
-    b64_frame = user1.frame
-
-```
-
-If any timeout errors are faced, then change the arguments passed to create\_watcher:  
-```client = AgoraRTC.create_watcher("app-id", "path-to-chrome", True)```
-
 
 ## AI Example
 
