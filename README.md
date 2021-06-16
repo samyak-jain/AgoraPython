@@ -1,5 +1,10 @@
 # Agora-community-sdk
 
+**IMPORTANT: This repository is deprecated. Please use this repository instead: https://github.com/AgoraIO-Community/Agora-Python-SDK**
+
+
+<br />
+
 A python library to stream video from agora servers.  
 To install -   
 ```pip install agora-community-sdk```
